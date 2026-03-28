@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "266167014434",
+    "firebase_url": "https://stranger-522bb-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "stranger-522bb",
+    "storage_bucket": "stranger-522bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:266167014434:android:54f1f3fe770bf62e94667b",
+        "android_client_info": {
+          "package_name": "com.example.neznakomets"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2Qgml_uplp13zw_8_bUfswh-ROGZWgyA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
