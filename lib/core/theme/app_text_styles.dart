@@ -46,9 +46,9 @@ class AppTextStyles {
   );
 
   static final TextStyle eyebrow = GoogleFonts.inter(
-    fontWeight: FontWeight.w400,
-    fontSize: 10,
-    letterSpacing: 1.0,
+    fontWeight: FontWeight.w600,
+    fontSize: 32,
+    letterSpacing: 2.5,
     color: AppColors.textEyebrow,
   );
 

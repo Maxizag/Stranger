@@ -33,62 +33,106 @@ class VaultScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  height: 48,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: PlumBackButton(
-                          onTap: () {
-                            ref.read(vaultProvider.notifier).lock();
-                            if (context.canPop()) {
-                              context.pop();
-                            } else {
-                              context.go('/');
-                            }
-                          },
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
+                  child: SizedBox(
+                    height: 48,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: PlumBackButton(
+                            onTap: () {
+                              ref.read(vaultProvider.notifier).lock();
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/');
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                      Text(
-                        'сейф',
-                        style: AppTextStyles.onboardingTitle.copyWith(
-                          fontSize: 18,
+                        Text(
+                          'Сейф',
+                          style: AppTextStyles.onboardingTitle.copyWith(
+                            fontSize: 22,
+                            color: AppColors.accent.withValues(alpha: 0.95),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const Divider(
-                  color: AppColors.borderRing1,
-                  thickness: 0.5,
-                  height: 1,
                 ),
                 Expanded(
                   child: sessions.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.folder_open_rounded,
-                                  size: 48,
-                                  color: AppColors.accentFaint,
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Opacity(
+                                opacity: 0.45,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Container(
+                                      width: 130,
+                                      height: 130,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: RadialGradient(
+                                          colors: [
+                                            AppColors.glowSlide0.withValues(alpha: 0.08),
+                                            AppColors.glowSlide0.withValues(alpha: 0.0),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 96,
+                                      height: 96,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.accentFaint.withValues(alpha: 0.35),
+                                        border: Border.all(
+                                          color: AppColors.borderIcon,
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.folder_open_rounded,
+                                        color: AppColors.accent,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 16),
-                                Text(
+                              ),
+                              const SizedBox(height: 24),
+                              Opacity(
+                                opacity: 0.5,
+                                child: Text(
                                   'здесь будут твои сохранённые разговоры',
                                   textAlign: TextAlign.center,
-                                  style:
-                                      AppTextStyles.onboardingBody.copyWith(
-                                    fontSize: 15,
+                                  style: AppTextStyles.onboardingBody.copyWith(
+                                    fontSize: 17,
+                                    color: AppColors.textBody,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 32),
+                              Opacity(
+                                opacity: 0.5,
+                                child: PlumButton(
+                                  label: 'начать разговор',
+                                  onTap: () {
+                                    ref.read(vaultProvider.notifier).lock();
+                                    context.go('/chat');
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         )
                       : ListView.builder(

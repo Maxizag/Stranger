@@ -31,14 +31,14 @@ class PlumButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         splashColor: AppColors.accent.withValues(alpha: 0.15),
         highlightColor: AppColors.accent.withValues(alpha: 0.08),
         child: Ink(
-          height: 54,
+          height: 62,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -50,7 +50,7 @@ class PlumButton extends StatelessWidget {
               ],
               stops: [0.0, 0.55, 1.0],
             ),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: AppColors.accent.withValues(alpha: AppColors.accent.a * 0.22),
               width: 0.5,
@@ -68,7 +68,11 @@ class PlumButton extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               label.toUpperCase(),
-              style: AppTextStyles.button,
+              style: AppTextStyles.button.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w300,
+                letterSpacing: 2.0,
+              ),
             ),
           ),
         ),
@@ -95,21 +99,20 @@ class PlumGhostButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(22),
         splashColor: AppColors.accent.withValues(alpha: 0.12),
         highlightColor: AppColors.accent.withValues(alpha: 0.07),
         child: Ink(
           height: minHeight,
           decoration: BoxDecoration(
             color: AppColors.btnGhostBg,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: AppColors.accentFaint
-                  .withValues(alpha: AppColors.accentFaint.a * 0.14),
-              width: 0.5,
+              color: AppColors.accentFaint.withValues(alpha: 0.35),
+              width: 0.8,
             ),
           ),
           child: Align(
@@ -118,8 +121,8 @@ class PlumGhostButton extends StatelessWidget {
               label.toUpperCase(),
               style: AppTextStyles.button.copyWith(
                 fontSize: fontSize,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 0.5,
+                fontWeight: FontWeight.w300,
+                letterSpacing: 2.0,
                 color: AppColors.homeGhostLabel,
               ),
             ),

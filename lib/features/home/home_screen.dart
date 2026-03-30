@@ -276,42 +276,79 @@ class _CounterBlock extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 220,
-              height: 220,
+              width: 300,
+              height: 300,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
+                  // Внешнее кольцо — едва видно
                   Container(
-                    width: 220,
-                    height: 220,
+                    width: 300,
+                    height: 300,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.accentFaint.withValues(alpha: 0.06),
+                          Colors.transparent,
+                        ],
+                      ),
                       border: Border.all(
-                        color: AppColors.borderRing1
-                            .withValues(alpha: AppColors.borderRing1.a * 0.03),
+                        color: AppColors.borderRing1.withValues(alpha: 0.08),
                         width: 0.5,
                       ),
                     ),
                   ),
+                  // Второе кольцо
                   Container(
-                    width: 188,
-                    height: 188,
+                    width: 256,
+                    height: 256,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.accentFaint.withValues(alpha: 0.10),
+                          Colors.transparent,
+                        ],
+                      ),
                       border: Border.all(
-                        color: AppColors.borderRing1
-                            .withValues(alpha: AppColors.borderRing1.a * 0.06),
+                        color: AppColors.borderRing1.withValues(alpha: 0.18),
                         width: 0.5,
                       ),
                     ),
                   ),
+                  // Третье кольцо
                   Container(
-                    width: 160,
-                    height: 160,
+                    width: 210,
+                    height: 210,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.accentFaint.withValues(alpha: 0.16),
+                          Colors.transparent,
+                        ],
+                      ),
                       border: Border.all(
-                        color: AppColors.borderRing1,
+                        color: AppColors.borderRing1.withValues(alpha: 0.35),
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                  // Внутреннее кольцо — самое заметное
+                  Container(
+                    width: 168,
+                    height: 168,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.accentFaint.withValues(alpha: 0.25),
+                          Colors.transparent,
+                        ],
+                      ),
+                      border: Border.all(
+                        color: AppColors.borderRing1.withValues(alpha: 0.6),
                         width: 0.5,
                       ),
                     ),
@@ -474,6 +511,7 @@ class _FooterBlock extends StatelessWidget {
                   label: 'Тарифы',
                   onTap: onSubscription,
                   fontSize: 15,
+                  minHeight: 56,
                 ),
               ),
               const SizedBox(width: 8),
@@ -482,6 +520,7 @@ class _FooterBlock extends StatelessWidget {
                   label: 'Мой сейф',
                   onTap: onVault,
                   fontSize: 15,
+                  minHeight: 56,
                 ),
               ),
             ],

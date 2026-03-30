@@ -49,25 +49,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       titleBefore: 'здесь нет\n',
       titleAccent: 'твоего имени',
       body:
-          'Никакой регистрации, никакого email. Только ты и разговор.',
+          'Никакой регистрации, аккаунта или номера телефона. Ты просто приходишь и говоришь. Никто не знает, кто ты — и это даёт настоящую свободу.',
       svgAsset: 'assets/icons/lock.svg',
     ),
     _SlideConfig(
       tag: '02',
-      eyebrow: 'ВРЕМЯ',
-      titleBefore: 'разговор ',
-      titleAccent: 'исчезнет',
+      eyebrow: 'СВОБОДА',
+      titleBefore: 'закрыл и ',
+      titleAccent: 'исчезло',
       body:
-          'После закрытия приложения переписка удаляется навсегда. Хочешь сохранить — есть личный сейф.',
+          'Как только сворачиваешь приложение — переписка удаляется навсегда. Ничего не сохраняется, ничего не передаётся. Только ты знаешь, что здесь было.',
       svgAsset: 'assets/icons/clock.svg',
     ),
     _SlideConfig(
       tag: '03',
-      eyebrow: 'ПРОЗРАЧНОСТЬ',
-      titleBefore: 'как работает ',
-      titleAccent: 'AI',
+      eyebrow: 'ЛИЧНЫЙ СЕЙФ',
+      titleBefore: 'сохрани ',
+      titleAccent: 'важное',
       body:
-          'Твои сообщения обрабатывает GigaChat от Сбера по их политике конфиденциальности. Мы не храним переписку, но Сбер видит запросы.',
+          'Если разговор оказался важным — сохрани его в личный сейф. Он защищён PIN-кодом и хранится только на твоём телефоне. Никто, кроме тебя, не имеет доступа.',
+      svgAsset: 'assets/icons/lock.svg',
+    ),
+    _SlideConfig(
+      tag: '04',
+      eyebrow: 'НЕЗНАКОМЕЦ',
+      titleBefore: 'легче говорить ',
+      titleAccent: 'чужому',
+      body:
+          'Иногда проще сказать правду тому, кто тебя не знает. Без осуждения, без последствий, без памяти о прошлом. Просто говори.',
       svgAsset: 'assets/icons/info.svg',
     ),
   ];
@@ -76,6 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     AppColors.glowSlide0,
     AppColors.glowSlide1,
     AppColors.glowSlide2,
+    AppColors.glowSlide0,
   ];
 
   final _pageController = PageController();
@@ -137,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    if (_page < 2)
+                    if (_page < 3)
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
@@ -182,7 +192,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (i) {
+                children: List.generate(4, (i) {
                   final isActive = i == _page;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 450),
@@ -209,7 +219,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: _page < 2 ? _ghostButton() : _solidButton(context),
+                child: _page < 3 ? _ghostButton() : _solidButton(context),
               ),
             ],
           ),
@@ -364,44 +374,40 @@ class _PlumOnboardingSlideState extends State<_PlumOnboardingSlide>
               ),
               const SizedBox(height: 8),
               const Spacer(flex: 1),
-              Center(child: _iconRings()),
-              const SizedBox(height: 36),
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 0.5,
-                      color: AppColors.accentFaint,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      c.eyebrow,
-                      style: AppTextStyles.eyebrow,
-                    ),
-                  ],
+                child: Text(
+                  c.eyebrow,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.eyebrow,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 24),
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: AppTextStyles.onboardingTitle,
+                  style: AppTextStyles.onboardingTitle.copyWith(
+                    fontSize: 24,
+                    color: AppColors.textBody.withValues(alpha: 0.5),
+                  ),
                   children: [
                     TextSpan(text: c.titleBefore),
                     TextSpan(
                       text: c.titleAccent,
-                      style: AppTextStyles.onboardingTitleAccent,
+                      style: AppTextStyles.onboardingTitleAccent.copyWith(
+                        fontSize: 24,
+                        color: AppColors.accentDim.withValues(alpha: 0.5),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              Center(child: _iconRings()),
+              const SizedBox(height: 12),
               Text(
                 c.body,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.onboardingBody,
+                style: AppTextStyles.onboardingBody.copyWith(fontSize: 18),
               ),
               const Spacer(flex: 2),
             ],
@@ -413,40 +419,75 @@ class _PlumOnboardingSlideState extends State<_PlumOnboardingSlide>
 
   Widget _iconRings() {
     return SizedBox(
-      width: 168,
-      height: 168,
+      width: 240,
+      height: 240,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Container(
-            width: 168,
-            height: 168,
+            width: 240,
+            height: 240,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  widget.glowColor.withValues(alpha: 0.06),
+                  Colors.transparent,
+                ],
+              ),
               border: Border.all(
-                color: AppColors.borderRing3,
+                color: AppColors.borderRing1.withValues(alpha: 0.08),
                 width: 0.5,
               ),
             ),
           ),
           Container(
-            width: 138,
-            height: 138,
+            width: 200,
+            height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  widget.glowColor.withValues(alpha: 0.10),
+                  Colors.transparent,
+                ],
+              ),
               border: Border.all(
-                color: AppColors.borderRing2,
+                color: AppColors.borderRing1.withValues(alpha: 0.18),
                 width: 0.5,
               ),
             ),
           ),
           Container(
-            width: 112,
-            height: 112,
+            width: 164,
+            height: 164,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  widget.glowColor.withValues(alpha: 0.14),
+                  Colors.transparent,
+                ],
+              ),
               border: Border.all(
-                color: AppColors.borderRing1,
+                color: AppColors.borderRing1.withValues(alpha: 0.35),
+                width: 0.5,
+              ),
+            ),
+          ),
+          Container(
+            width: 126,
+            height: 126,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  widget.glowColor.withValues(alpha: 0.20),
+                  Colors.transparent,
+                ],
+              ),
+              border: Border.all(
+                color: AppColors.borderRing1.withValues(alpha: 0.6),
                 width: 0.5,
               ),
             ),
@@ -456,8 +497,8 @@ class _PlumOnboardingSlideState extends State<_PlumOnboardingSlide>
               CurvedAnimation(parent: _breathe, curve: Curves.easeInOut),
             ),
             child: Container(
-              width: 76,
-              height: 76,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.accentFaint.withValues(alpha: 0.55),
@@ -469,8 +510,8 @@ class _PlumOnboardingSlideState extends State<_PlumOnboardingSlide>
               alignment: Alignment.center,
               child: SvgPicture.asset(
                 widget.config.svgAsset,
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 colorFilter: const ColorFilter.mode(
                   AppColors.accent,
                   BlendMode.srcIn,

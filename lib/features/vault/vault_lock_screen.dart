@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:neznakomets/core/theme/app_colors.dart';
 import 'package:neznakomets/core/theme/app_text_styles.dart';
+import 'package:neznakomets/core/widgets/plum_ui.dart';
 import 'package:neznakomets/features/vault/vault_provider.dart';
 
 class VaultLockScreen extends ConsumerStatefulWidget {
@@ -174,32 +175,19 @@ class _VaultLockScreenState extends ConsumerState<VaultLockScreen>
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 20, top: 16),
-                child: GestureDetector(
-                  onTap: () => context.canPop()
-                      ? context.pop()
-                      : context.go('/'),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.btnGhostBg,
-                      borderRadius: BorderRadius.circular(11),
-                      border: Border.all(
-                        color: AppColors.borderRing1,
-                        width: 0.5,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.chevron_left,
-                      color: AppColors.accentDim,
-                      size: 20,
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
+                child: SizedBox(
+                  height: 48,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: PlumBackButton(
+                      onTap: () => context.canPop()
+                          ? context.pop()
+                          : context.go('/'),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -331,7 +319,6 @@ class _VaultLockScreenState extends ConsumerState<VaultLockScreen>
                         onBackspace: _backspace,
                         enabled: !s.isLocked,
                       ),
-                      const SizedBox(height: 12),
                       const SizedBox(height: 8),
                       _PinCta(
                         isSetup: isSetup,
@@ -377,7 +364,7 @@ class _PinCta extends StatelessWidget {
         : 'войти';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
+      padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
       child: GestureDetector(
         onTap: isReady
             ? () {
@@ -452,30 +439,37 @@ class _Keypad extends StatelessWidget {
       ['7', '8', '9'],
       ['', '0', '⌫'],
     ];
-    return Column(
-      children: keys.map((row) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: row.map((k) {
-              if (k.isEmpty) {
-                return const SizedBox(width: 72, height: 72);
-              }
-              if (k == '⌫') {
-                return _KeyCell(
-                  label: k,
-                  onTap: enabled ? onBackspace : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: keys.map((row) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: row.asMap().entries.map((e) {
+                final i = e.key;
+                final k = e.value;
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: i == 0 ? 0 : 5,
+                      right: i == 2 ? 0 : 5,
+                    ),
+                    child: k.isEmpty
+                        ? const SizedBox(height: 68)
+                        : _KeyCell(
+                            label: k,
+                            onTap: k == '⌫'
+                                ? (enabled ? onBackspace : null)
+                                : (enabled ? () => onDigit(k) : null),
+                          ),
+                  ),
                 );
-              }
-              return _KeyCell(
-                label: k,
-                onTap: enabled ? () => onDigit(k) : null,
-              );
-            }).toList(),
-          ),
-        );
-      }).toList(),
+              }).toList(),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
@@ -491,19 +485,19 @@ class _KeyCell extends StatelessWidget {
     final enabled = onTap != null;
     return Material(
       color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(18),
         splashColor: AppColors.accent.withValues(alpha: 0.12),
         highlightColor: AppColors.accent.withValues(alpha: 0.07),
         child: Ink(
-          width: 72,
-          height: 72,
+          height: 68,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.btnGhostBg,
+            color: AppColors.surfaceEnd.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: AppColors.borderRing1,
+              color: AppColors.borderRing1.withValues(alpha: 0.6),
               width: 0.5,
             ),
           ),
@@ -513,15 +507,15 @@ class _KeyCell extends StatelessWidget {
                 ? Icon(
                     Icons.backspace_outlined,
                     color: enabled
-                        ? AppColors.textMuted
+                        ? AppColors.textBody
                         : AppColors.textMuted.withValues(alpha: 0.4),
-                    size: 20,
+                    size: 22,
                   )
                 : Text(
                     label,
-                    style: AppTextStyles.onboardingTitle.copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
+                    style: AppTextStyles.numerals.copyWith(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w500,
                       color: enabled
                           ? AppColors.textPrimary
                           : AppColors.textMuted.withValues(alpha: 0.4),
