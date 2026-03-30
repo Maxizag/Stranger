@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:neznakomets/app/theme.dart';
+import 'package:neznakomets/core/theme/app_colors.dart';
+import 'package:neznakomets/core/theme/app_text_styles.dart';
+import 'package:neznakomets/core/widgets/plum_ui.dart';
+import 'package:neznakomets/features/chat/chat_provider.dart';
 import 'package:neznakomets/features/vault/vault_provider.dart';
 import 'package:neznakomets/models/message.dart';
 
@@ -63,10 +66,17 @@ class _VaultSessionDetailScreenState
       builder: (ctx) {
         final c = TextEditingController();
         return AlertDialog(
-          backgroundColor: NeznakometsColors.card,
-          title: const Text(
+          backgroundColor: AppColors.chatDialogBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: AppColors.borderRing1, width: 0.5),
+          ),
+          title: Text(
             'PIN сейфа',
-            style: TextStyle(color: NeznakometsColors.textPrimary),
+            style: AppTextStyles.onboardingBody.copyWith(
+              fontSize: 15,
+              color: AppColors.textPrimary,
+            ),
           ),
           content: TextField(
             controller: c,
@@ -74,21 +84,49 @@ class _VaultSessionDetailScreenState
             keyboardType: TextInputType.number,
             maxLength: 6,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: const TextStyle(color: NeznakometsColors.textPrimary),
-            decoration: const InputDecoration(
+            style: AppTextStyles.onboardingBody.copyWith(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
               counterText: '',
               hintText: '6 цифр',
-              hintStyle: TextStyle(color: NeznakometsColors.textSecondary),
+              hintStyle: AppTextStyles.onboardingBody.copyWith(
+                fontSize: 14,
+                color: AppColors.textMuted,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: AppColors.borderRing1,
+                  width: 0.5,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: AppColors.accentFaint,
+                  width: 0.5,
+                ),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('отмена'),
+              child: Text(
+                'отмена',
+                style: AppTextStyles.skip,
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, c.text.trim()),
-              child: const Text('ок'),
+              child: Text(
+                'ок',
+                style: AppTextStyles.button.copyWith(
+                  color: AppColors.accent,
+                ),
+              ),
             ),
           ],
         );
@@ -107,6 +145,7 @@ class _VaultSessionDetailScreenState
           .read(vaultProvider.notifier)
           .loadMessagesForSession(widget.sessionId, pin);
       if (mounted) {
+        ref.read(vaultProvider.notifier).cachePinAfterSuccessfulDecrypt(pin);
         setState(() {
           _messages = m;
           _loading = false;
@@ -127,65 +166,132 @@ class _VaultSessionDetailScreenState
     final maxW = MediaQuery.sizeOf(context).width * 0.75;
 
     return Scaffold(
-      backgroundColor: NeznakometsColors.background,
-      appBar: AppBar(
-        backgroundColor: NeznakometsColors.card,
-        foregroundColor: NeznakometsColors.textPrimary,
-        elevation: 0,
-        title: const Text(
-          'разговор',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: kPlumScreenDecoration,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 48,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: PlumBackButton(
+                          onTap: () => context.pop(),
+                        ),
+                      ),
+                      Text(
+                        'разговор',
+                        style: AppTextStyles.onboardingTitle.copyWith(
+                          fontSize: 18,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: _loading
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.accent,
+                          ),
+                        )
+                      : _error != null
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _error!,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.onboardingBody
+                                          .copyWith(
+                                        fontSize: 15,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: PlumButton(
+                                        label: 'ещё раз',
+                                        onTap: () {
+                                          setState(() {
+                                            _error = null;
+                                            _loading = true;
+                                          });
+                                          _askPinAndLoad();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: _messages!.length,
+                                    itemBuilder: (context, i) {
+                                      final m = _messages![i];
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 12),
+                                        child: _VaultReadBubble(
+                                          message: m,
+                                          maxWidth: maxW,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                SafeArea(
+                                  top: false,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      8,
+                                      16,
+                                      16,
+                                    ),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      child: PlumButton(
+                                        label: 'продолжить разговор',
+                                        onTap: () {
+                                          ref
+                                              .read(historyProvider.notifier)
+                                              .state = List<Message>.from(
+                                            _messages!,
+                                          );
+                                          ref.invalidate(chatProvider);
+                                          context.go('/chat');
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: NeznakometsColors.accent),
-            )
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: NeznakometsColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: () {
-                            setState(() {
-                              _error = null;
-                              _loading = true;
-                            });
-                            _askPinAndLoad();
-                          },
-                          child: const Text('ещё раз'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _messages?.length ?? 0,
-                  itemBuilder: (context, i) {
-                    final m = _messages![i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _VaultReadBubble(message: m, maxWidth: maxW),
-                    );
-                  },
-                ),
     );
   }
 }
@@ -199,37 +305,40 @@ class _VaultReadBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
-    final radius = isUser
-        ? const BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
-            bottomLeft: Radius.circular(4),
-            bottomRight: Radius.circular(12),
-          )
-        : const BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
-            bottomLeft: Radius.circular(12),
-            bottomRight: Radius.circular(4),
-          );
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
           color: isUser
-              ? NeznakometsColors.bubbleUser
-              : NeznakometsColors.bubbleAi,
-          borderRadius: radius,
+              ? AppColors.chatBubbleUserFill
+              : AppColors.chatBubbleAiFill,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isUser ? 16 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 16),
+          ),
+          border: Border.all(
+            color: isUser
+                ? AppColors.accent.withValues(
+                    alpha: AppColors.accent.a * 0.18,
+                  )
+                : AppColors.borderRing1,
+            width: 0.5,
+          ),
         ),
         child: Text(
           message.text,
-          style: const TextStyle(
-            fontSize: 15,
-            height: 1.35,
-            color: NeznakometsColors.textPrimary,
+          style: AppTextStyles.onboardingBody.copyWith(
+            fontSize: 14,
+            height: 1.55,
+            letterSpacing: 0.1,
+            color: isUser
+                ? AppColors.chatBubbleUserText
+                : AppColors.chatBubbleAiText,
           ),
         ),
       ),

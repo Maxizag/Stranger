@@ -3,8 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// Заголовки: Syne (Google Fonts). Остальное: Inter.
+/// Заголовки: Syne (Google Fonts). Цифры: Space Grotesk. Остальное: Inter.
 class AppTextStyles {
+  /// Для крупных чисел (счётчик, цены): Space Grotesk — таблично выровненные
+  /// глифы, хорошо читается на любом размере.
+  static final TextStyle numerals = GoogleFonts.spaceGrotesk(
+    fontWeight: FontWeight.w600,
+    fontSize: 32,
+    height: 1.1,
+    letterSpacing: -0.5,
+    color: AppColors.textPrimary,
+  );
+
   static final TextStyle onboardingTitle = GoogleFonts.syne(
     fontWeight: FontWeight.w800,
     fontSize: 30,

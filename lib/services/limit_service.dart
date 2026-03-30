@@ -41,6 +41,9 @@ class LimitService {
   static const String prefsCountKey = 'daily_sessions_count';
   static const int dailyLimit = 3;
 
+  // TODO: убрать перед релизом — временно отключает лимит сессий для тестов.
+  static const bool _limitBypassForTesting = true;
+
   String? _cachedHashedId;
 
   /// Дата YYYY-MM-DD по UTC+3 (Москва).
@@ -185,6 +188,8 @@ class LimitService {
 
   /// Можно ли начать новую сессию (count < 3 за московский день).
   Future<bool> canStartSession() async {
+    // TODO: убрать перед релизом
+    if (_limitBypassForTesting) return true;
     try {
       final db = _databaseOrNull();
       final hid = await _hashedDeviceId();
@@ -212,6 +217,8 @@ class LimitService {
 
   /// Сколько сессий осталось сегодня (0…3).
   Future<int> remainingToday() async {
+    // TODO: убрать перед релизом
+    if (_limitBypassForTesting) return 99;
     try {
       final db = _databaseOrNull();
       final hid = await _hashedDeviceId();

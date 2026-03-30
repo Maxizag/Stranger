@@ -14,6 +14,10 @@ const List<String> kCrisisTriggers = [
   'лучше бы меня не было',
 ];
 
+/// Перед `go('/chat')` из сейфа: записать копию, `ref.invalidate(chatProvider)`, затем переход.
+/// Фабрика [chatProvider] читает историю, синхронно очищает этот провайдер и передаёт копию в [ChatNotifier].
+final historyProvider = StateProvider<List<Message>>((ref) => []);
+
 class ChatState {
   const ChatState({
     required this.messages,
@@ -50,17 +54,45 @@ class ChatState {
       messages: [
         Message(
           id: 'welcome',
-          text: 'привет. здесь безопасно. что хочешь сказать?',
+          text:
+              'Я незнакомец. Именно поэтому тебе не нужно ничего скрывать. О чём не хочешь никому говорить?',
           isUser: false,
           timestamp: DateTime.now(),
         ),
       ],
     );
   }
+
+  /// Восстановление из сейфа: карточка кризиса, если триггер уже был в истории.
+  factory ChatState.fromResumeHistory(List<Message> messages) {
+    String? crisisAfter;
+    var crisisShown = false;
+    for (final m in messages) {
+      if (!m.isUser) continue;
+      final lower = m.text.toLowerCase();
+      for (final t in kCrisisTriggers) {
+        if (lower.contains(t)) {
+          crisisShown = true;
+          crisisAfter = m.id;
+          break;
+        }
+      }
+      if (crisisShown) break;
+    }
+    return ChatState(
+      messages: messages,
+      crisisCardShown: crisisShown,
+      crisisCardAfterMessageId: crisisAfter,
+    );
+  }
 }
 
 class ChatNotifier extends StateNotifier<ChatState> {
-  ChatNotifier(this._gigachat, this._counter) : super(ChatState.initial()) {
+  ChatNotifier(
+    this._gigachat,
+    this._counter, {
+    ChatState? initialState,
+  }) : super(initialState ?? ChatState.initial()) {
     Future<void>.microtask(_bumpSessionCounter);
   }
 
@@ -149,8 +181,22 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
 final chatProvider =
     StateNotifierProvider.autoDispose<ChatNotifier, ChatState>((ref) {
+  final history = ref.read(historyProvider);
+  if (history.isNotEmpty) {
+    final copy = List<Message>.from(history);
+    // Riverpod запрещает синхронно менять другие провайдеры во время
+    // инициализации. Очистим историю асинхронно (после текущего build).
+    Future.microtask(() {
+      ref.read(historyProvider.notifier).state = [];
+    });
+    return ChatNotifier(
+      GigachatService(),
+      ref.read(counterServiceProvider),
+      initialState: ChatState.fromResumeHistory(copy),
+    );
+  }
   return ChatNotifier(
     GigachatService(),
-    ref.watch(counterServiceProvider),
+    ref.read(counterServiceProvider),
   );
 });

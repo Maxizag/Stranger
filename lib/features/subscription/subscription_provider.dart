@@ -1,14 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Заглушка подписки (позже — ЮKassa).
+/// Заглушка тарифа (позже — ЮKassa).
 class SubscriptionState {
   const SubscriptionState({
-    this.isSubscribed = false,
-    this.selectedPlan = 'month',
+    // TODO: убрать перед релизом — вернуть isSubscribed: false
+    this.isSubscribed = true,
+    this.selectedPlan = 'ultra',
   });
 
   final bool isSubscribed;
-  /// `'month'` или `'year'`.
+  /// `'echo'`, `'voice'` или `'ultra'`.
   final String selectedPlan;
 
   SubscriptionState copyWith({
@@ -26,7 +27,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
   SubscriptionNotifier() : super(const SubscriptionState());
 
   void selectPlan(String plan) {
-    if (plan != 'month' && plan != 'year') return;
+    if (plan != 'echo' && plan != 'voice' && plan != 'ultra') return;
     state = state.copyWith(selectedPlan: plan);
   }
 }

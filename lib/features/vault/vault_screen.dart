@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:neznakomets/app/theme.dart';
+import 'package:neznakomets/core/theme/app_colors.dart';
+import 'package:neznakomets/core/theme/app_text_styles.dart';
+import 'package:neznakomets/core/widgets/plum_ui.dart';
 import 'package:neznakomets/features/vault/vault_provider.dart';
 
 class VaultScreen extends ConsumerWidget {
@@ -24,126 +26,225 @@ class VaultScreen extends ConsumerWidget {
         if (didPop) ref.read(vaultProvider.notifier).lock();
       },
       child: Scaffold(
-        backgroundColor: NeznakometsColors.background,
-        appBar: AppBar(
-          backgroundColor: NeznakometsColors.card,
-          foregroundColor: NeznakometsColors.textPrimary,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              ref.read(vaultProvider.notifier).lock();
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/');
-              }
-            },
-          ),
-          title: const Text(
-            'сейф',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-          ),
-        ),
-        body: sessions.isEmpty
-            ? const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text(
-                    'здесь будут твои сохранённые разговоры',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: NeznakometsColors.textSecondary,
-                      height: 1.35,
-                    ),
+        backgroundColor: Colors.transparent,
+        body: Container(
+          decoration: kPlumScreenDecoration,
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  height: 48,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: PlumBackButton(
+                          onTap: () {
+                            ref.read(vaultProvider.notifier).lock();
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/');
+                            }
+                          },
+                        ),
+                      ),
+                      Text(
+                        'сейф',
+                        style: AppTextStyles.onboardingTitle.copyWith(
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: sessions.length,
-                itemBuilder: (context, i) {
-                  final s = sessions[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Material(
-                      color: NeznakometsColors.card,
-                      borderRadius: BorderRadius.circular(16),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => context.push('/vault/session/${s.id}'),
-                        child: Padding(
+                const Divider(
+                  color: AppColors.borderRing1,
+                  thickness: 0.5,
+                  height: 1,
+                ),
+                Expanded(
+                  child: sessions.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.folder_open_rounded,
+                                  size: 48,
+                                  color: AppColors.accentFaint,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'здесь будут твои сохранённые разговоры',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      AppTextStyles.onboardingBody.copyWith(
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
+                          itemCount: sessions.length,
+                          itemBuilder: (context, i) {
+                            final s = sessions[i];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.btnGhostBg,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppColors.borderRing1,
+                                    width: 0.5,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(16),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                    Text(
-                                      _formatDate(s.savedAt),
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: NeznakometsColors.textSecondary,
-                                      ),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _formatDate(s.savedAt),
+                                                style: AppTextStyles
+                                                    .onboardingBody
+                                                    .copyWith(
+                                                  fontSize: 11,
+                                                  color:
+                                                      AppColors.textEyebrow,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                s.title,
+                                                style: AppTextStyles
+                                                    .onboardingBody
+                                                    .copyWith(
+                                                  fontSize: 13,
+                                                  color: AppColors.textBody,
+                                                  height: 1.35,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(
+                                            minWidth: 40,
+                                            minHeight: 40,
+                                          ),
+                                          icon: Icon(
+                                            Icons.delete_outline_rounded,
+                                            color: AppColors.textMuted,
+                                          ),
+                                          onPressed: () async {
+                                            final ok = await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                backgroundColor:
+                                                    AppColors.chatDialogBg,
+                                                shape:
+                                                    RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          20),
+                                                  side: BorderSide(
+                                                    color:
+                                                        AppColors.borderRing1,
+                                                    width: 0.5,
+                                                  ),
+                                                ),
+                                                title: Text(
+                                                  'удалить?',
+                                                  style: AppTextStyles
+                                                      .onboardingTitle
+                                                      .copyWith(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            ctx, false),
+                                                    child: Text(
+                                                      'нет',
+                                                      style: AppTextStyles
+                                                          .skip,
+                                                    ),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            ctx, true),
+                                                    child: Text(
+                                                      'да',
+                                                      style: AppTextStyles
+                                                          .button
+                                                          .copyWith(
+                                                        color:
+                                                            AppColors.accent,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (ok == true &&
+                                                context.mounted) {
+                                              await ref
+                                                  .read(vaultProvider
+                                                      .notifier)
+                                                  .deleteSession(s.id);
+                                            }
+                                          },
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      s.title,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        height: 1.35,
-                                        color: NeznakometsColors.textPrimary,
-                                      ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: PlumGhostButton(
+                                            label: 'открыть',
+                                            minHeight: 40,
+                                            fontSize: 11,
+                                            onTap: () => context.push(
+                                              '/vault/session/${s.id}',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: NeznakometsColors.textSecondary,
-                                ),
-                                onPressed: () async {
-                                  final ok = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      backgroundColor: NeznakometsColors.card,
-                                      title: const Text(
-                                        'удалить?',
-                                        style: TextStyle(
-                                          color: NeznakometsColors.textPrimary,
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(ctx, false),
-                                          child: const Text('нет'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(ctx, true),
-                                          child: const Text('да'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (ok == true && context.mounted) {
-                                    await ref
-                                        .read(vaultProvider.notifier)
-                                        .deleteSession(s.id);
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

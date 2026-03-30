@@ -3,7 +3,7 @@ import 'package:neznakomets/models/message.dart';
 import 'package:neznakomets/models/vault_session.dart';
 import 'package:neznakomets/services/vault_service.dart';
 
-enum VaultState { locked, unlocked, pinSetup, biometricPrompt }
+enum VaultState { locked, unlocked, pinSetup }
 
 final vaultServiceProvider = Provider<VaultService>((ref) {
   return VaultService();
@@ -77,6 +77,13 @@ class VaultNotifier extends StateNotifier<VaultUiState> {
   /// PIN в памяти для расшифровки без повторного ввода после успешного входа по PIN.
   String? get cachedPin => _cachedPin;
 
+  /// После успешного `loadMessagesForSession` по PIN из диалога — для автосохранения чата при паузе.
+  void cachePinAfterSuccessfulDecrypt(String pin) {
+    if (pin.length == 6 && RegExp(r'^\d{6}$').hasMatch(pin)) {
+      _cachedPin = pin;
+    }
+  }
+
   Future<bool> submitPIN(String pin) async {
     if (pin.length != 6) return false;
     if (_vault.isLocked()) {
@@ -114,26 +121,6 @@ class VaultNotifier extends StateNotifier<VaultUiState> {
     );
   }
 
-  Future<bool> authenticateWithBiometric() async {
-    state = state.copyWith(vaultState: VaultState.biometricPrompt);
-    final ok = await _vault.authenticateWithBiometric();
-    if (!ok) {
-      state = state.copyWith(vaultState: VaultState.locked);
-      return false;
-    }
-    _vault.resetLockCounters();
-    _cachedPin = null;
-    final sessions = await _vault.loadSessionsMetadata();
-    state = VaultUiState(
-      vaultState: VaultState.unlocked,
-      sessions: sessions,
-      failedAttempts: 0,
-      isLocked: false,
-      lockRemainingSeconds: 0,
-    );
-    return true;
-  }
-
   Future<void> deleteSession(String id) async {
     await _vault.deleteSession(id);
     final sessions = await _vault.loadSessionsMetadata();
@@ -164,8 +151,6 @@ class VaultNotifier extends StateNotifier<VaultUiState> {
   Future<bool> hasPIN() => _vault.hasPIN();
 
   Future<bool> pinMatches(String pin) => _vault.pinMatches(pin);
-
-  Future<bool> isBiometricAvailable() => _vault.isBiometricAvailable();
 }
 
 final vaultProvider =

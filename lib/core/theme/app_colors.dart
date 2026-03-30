@@ -51,4 +51,44 @@ class AppColors {
   static const Color borderRing1 = Color(0x1EA05A73); // rgba(160,90,115,0.12)
   static const Color borderRing2 = Color(0x12A05A73); // rgba(160,90,115,0.07)
   static const Color borderRing3 = Color(0x0AA05A73); // rgba(160,90,115,0.04)
+
+  // --- Home (ambient A) ---
+  static const Color homeTagline = Color(0x99785A5A); // rgba(120,75,90,0.6)
+  static const Color homeAmbientGlow = Color(0xFFC07090);
+  static const Color homeCounterNumber = Color(0x99C8829B); // rgba(200,130,155,0.6)
+  static const Color homeCaption = Color(0x8C64414E); // rgba(100,65,78,0.55)
+  static const Color homeSessionsFooter = Color(0x8C50323E); // rgba(80,50,62,0.55)
+  static const Color homeGhostLabel = Color(0x998C5A6C); // rgba(140,90,108,0.6)
+  static const Color homeLimitSheetBg = Color(0xFF141214);
+
+  // --- Chat ---
+  static const Color chatScaffoldBg = Color(0xFF0F0C10);
+  static const Color chatHeaderBorderBottom = Color(0x14A05A73);
+  static const Color chatBackIcon = Color(0x99B46E87);
+  static const Color chatHeaderTitle = Color(0xE0E1C8D2);
+  static const Color chatHeaderSubtitle = Color(0x72785A5A);
+  static const Color chatEndSessionBg = Color(0x5950303E);
+  static const Color chatEndSessionText = Color(0x80A06478);
+  static const Color chatBubbleUserFill = Color(0x8C4D2838);
+  static const Color chatBubbleAiFill = Color(0x72351E28);
+  static const Color chatBubbleUserText = Color(0xE0E6C3D4);
+  static const Color chatBubbleAiText = Color(0xD0D2B4C0);
+  static const Color chatTimestamp = Color(0x6664414E);
+  static const Color chatTypingBubbleBg = Color(0x59351E28);
+  static const Color chatTypingDot = Color(0x73B46E87);
+  static const Color chatInputTopBorder = Color(0x0FA05A73);
+  static const Color chatInputText = Color(0xB3D2B4C0);
+  static const Color chatInputHint = Color(0x6664414E);
+  static const Color chatSendInactiveStart = Color(0xFF2A1A22);
+  static const Color chatSendInactiveEnd = Color(0xFF1E1018);
+  static const Color chatDialogBg = Color(0xFF1A1014);
+  static const Color chatInputFooterHint = Color(0x6650323E);
+  static const Color chatFieldBorderActive = Color(0x2EA05A73);
+  static const Color chatFieldBorderIdle = Color(0x1EA05A73);
+
+  static const Color btnSolidShadow = Color(0xFF501E32);
+
+  static const Color crisisCardBg = Color(0xFF1A0F0F);
+  static const Color crisisCardBorder = Color(0xFFFF6B6B);
+  static const Color crisisCardText = Color(0xFFFF6B6B);
 }
