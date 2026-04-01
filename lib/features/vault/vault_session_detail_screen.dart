@@ -277,6 +277,9 @@ class _VaultSessionDetailScreenState
                                               .state = List<Message>.from(
                                             _messages!,
                                           );
+                                          ref
+                                              .read(resumedVaultSessionIdProvider.notifier)
+                                              .state = widget.sessionId;
                                           ref.invalidate(chatProvider);
                                           context.go('/chat');
                                         },

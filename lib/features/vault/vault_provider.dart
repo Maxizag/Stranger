@@ -148,6 +148,16 @@ class VaultNotifier extends StateNotifier<VaultUiState> {
     state = state.copyWith(sessions: sessions);
   }
 
+  Future<void> updateChatSession(
+    String sessionId,
+    List<Message> messages,
+    String pin,
+  ) async {
+    await _vault.updateSession(sessionId, messages, pin);
+    final sessions = await _vault.loadSessionsMetadata();
+    state = state.copyWith(sessions: sessions);
+  }
+
   Future<bool> hasPIN() => _vault.hasPIN();
 
   Future<bool> pinMatches(String pin) => _vault.pinMatches(pin);

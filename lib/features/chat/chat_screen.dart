@@ -58,13 +58,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     if (isSubscribed &&
         pin != null &&
         _shouldPersistChatOnPause(chatState)) {
+      final resumedId = ref.read(resumedVaultSessionIdProvider);
       try {
-        await ref.read(vaultProvider.notifier).saveChatSession(
-              chatState.messages,
-              pin,
-            );
+        if (resumedId != null) {
+          await ref.read(vaultProvider.notifier).updateChatSession(
+                resumedId,
+                chatState.messages,
+                pin,
+              );
+        } else {
+          await ref.read(vaultProvider.notifier).saveChatSession(
+                chatState.messages,
+                pin,
+              );
+        }
       } catch (_) {}
+      // Сбрасываем ID после сохранения
+      ref.read(resumedVaultSessionIdProvider.notifier).state = null;
     }
+
+    // Тихая память: экстрагируем факты о пользователе для тарифа Бездна
+    try {
+      await ref.read(chatProvider.notifier).maybeExtractMemory();
+    } catch (_) {}
 
     if (!mounted) return;
     // Сначала уходим с маршрута — иначе после invalidate autoDispose сразу создаст
@@ -75,8 +91,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   void _scrollToBottom() {
     if (!_scroll.hasClients) return;
+    final pos = _scroll.position;
+    if (!pos.hasPixels) return;
     _scroll.animateTo(
-      _scroll.position.maxScrollExtent,
+      pos.maxScrollExtent,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
@@ -278,7 +296,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
 
     try {
-      await vault.saveChatSession(msgs, pin);
+      final resumedId = ref.read(resumedVaultSessionIdProvider);
+      if (resumedId != null) {
+        await vault.updateChatSession(resumedId, msgs, pin);
+        ref.read(resumedVaultSessionIdProvider.notifier).state = null;
+      } else {
+        await vault.saveChatSession(msgs, pin);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('сохранено в сейф')),

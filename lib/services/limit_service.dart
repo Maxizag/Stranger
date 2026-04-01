@@ -39,10 +39,23 @@ class LimitService {
 
   static const String prefsDateKey = 'daily_sessions_date';
   static const String prefsCountKey = 'daily_sessions_count';
-  static const int dailyLimit = 3;
+
+  /// Лимит сессий по тарифу.
+  static int limitForPlan(String plan) {
+    switch (plan) {
+      case 'echo':
+        return 10;
+      case 'voice':
+        return 40;
+      case 'ultra':
+        return 80;
+      default:
+        return 3; // free (без подписки)
+    }
+  }
 
   // TODO: убрать перед релизом — временно отключает лимит сессий для тестов.
-  static const bool _limitBypassForTesting = true;
+  static const bool _limitBypassForTesting = false;
 
   String? _cachedHashedId;
 
@@ -104,11 +117,11 @@ class LimitService {
     }
   }
 
-  Future<bool> _localCanStartSession() async {
+  Future<bool> _localCanStartSession(int limit) async {
     final prefs = await SharedPreferences.getInstance();
     await _localEnsureToday(prefs);
     final count = prefs.getInt(prefsCountKey) ?? 0;
-    return count < dailyLimit;
+    return count < limit;
   }
 
   Future<void> _localRecordSession() async {
@@ -118,11 +131,11 @@ class LimitService {
     await prefs.setInt(prefsCountKey, count + 1);
   }
 
-  Future<int> _localRemainingToday() async {
+  Future<int> _localRemainingToday(int limit) async {
     final prefs = await SharedPreferences.getInstance();
     await _localEnsureToday(prefs);
     final count = prefs.getInt(prefsCountKey) ?? 0;
-    return (dailyLimit - count).clamp(0, dailyLimit);
+    return (limit - count).clamp(0, limit);
   }
 
   // --- Firebase ---
@@ -130,6 +143,7 @@ class LimitService {
   Future<bool> _firebaseCanStartSession(
     FirebaseDatabase db,
     String hashedId,
+    int limit,
   ) async {
     final ref = _userLimitRef(db, hashedId);
     final snap = await ref.get();
@@ -138,12 +152,13 @@ class LimitService {
     final storedDate = _readDate(m);
     final storedCount = _readCount(m);
     final eff = _effectiveCountForToday(today, storedDate, storedCount);
-    return eff < dailyLimit;
+    return eff < limit;
   }
 
   Future<void> _firebaseRecordSession(
     FirebaseDatabase db,
     String hashedId,
+    int limit,
   ) async {
     final ref = _userLimitRef(db, hashedId);
     await ref.runTransaction((Object? current) {
@@ -158,7 +173,7 @@ class LimitService {
           'count': 1,
         });
       }
-      if (count >= dailyLimit) {
+      if (count >= limit) {
         return Transaction.success(<String, Object?>{
           'date': today,
           'count': count,
@@ -175,6 +190,7 @@ class LimitService {
   Future<int> _firebaseRemainingToday(
     FirebaseDatabase db,
     String hashedId,
+    int limit,
   ) async {
     final ref = _userLimitRef(db, hashedId);
     final snap = await ref.get();
@@ -183,25 +199,26 @@ class LimitService {
     final storedDate = _readDate(m);
     final storedCount = _readCount(m);
     final eff = _effectiveCountForToday(today, storedDate, storedCount);
-    return (dailyLimit - eff).clamp(0, dailyLimit);
+    return (limit - eff).clamp(0, limit);
   }
 
-  /// Можно ли начать новую сессию (count < 3 за московский день).
-  Future<bool> canStartSession() async {
-    // TODO: убрать перед релизом
+  /// Можно ли начать новую сессию по тарифу [plan].
+  Future<bool> canStartSession({String plan = 'free'}) async {
     if (_limitBypassForTesting) return true;
+    final limit = limitForPlan(plan);
     try {
       final db = _databaseOrNull();
       final hid = await _hashedDeviceId();
-      if (db == null || hid == null) return _localCanStartSession();
-      return await _firebaseCanStartSession(db, hid);
+      if (db == null || hid == null) return _localCanStartSession(limit);
+      return await _firebaseCanStartSession(db, hid, limit);
     } catch (_) {
-      return _localCanStartSession();
+      return _localCanStartSession(limit);
     }
   }
 
   /// Учесть одну сессию (после успешной проверки лимита).
-  Future<void> recordSession() async {
+  Future<void> recordSession({String plan = 'free'}) async {
+    final limit = limitForPlan(plan);
     try {
       final db = _databaseOrNull();
       final hid = await _hashedDeviceId();
@@ -209,23 +226,23 @@ class LimitService {
         await _localRecordSession();
         return;
       }
-      await _firebaseRecordSession(db, hid);
+      await _firebaseRecordSession(db, hid, limit);
     } catch (_) {
       await _localRecordSession();
     }
   }
 
-  /// Сколько сессий осталось сегодня (0…3).
-  Future<int> remainingToday() async {
-    // TODO: убрать перед релизом
+  /// Сколько сессий осталось сегодня по тарифу [plan].
+  Future<int> remainingToday({String plan = 'free'}) async {
     if (_limitBypassForTesting) return 99;
+    final limit = limitForPlan(plan);
     try {
       final db = _databaseOrNull();
       final hid = await _hashedDeviceId();
-      if (db == null || hid == null) return _localRemainingToday();
-      return await _firebaseRemainingToday(db, hid);
+      if (db == null || hid == null) return _localRemainingToday(limit);
+      return await _firebaseRemainingToday(db, hid, limit);
     } catch (_) {
-      return _localRemainingToday();
+      return _localRemainingToday(limit);
     }
   }
 }

@@ -17,7 +17,7 @@ const String kSystemPrompt = """
 1) Никогда не давай советов если тебя об этом не просят.
 2) Никогда не осуждай и не оценивай действия человека.
 3) Не используй психологические термины и не веди себя как психолог.
-4) В конце каждого своего ответа задай один короткий вопрос — глубокий, немного неудобный, который заставляет думать. Просто задай вопрос, не объясняй почему ты его задаёшь.
+4) В конце каждого своего ответа задай один короткий вопрос — глубокий, немного неудобный, который заставляет думать. Просто напиши вопрос как часть ответа. Никаких скобок, пояснений, заголовков или пометок вокруг вопроса.
 5) Отвечай коротко: 2-4 предложения максимум.
 6) Пиши на русском языке, разговорно, без канцелярита.
 7) Ты не знаешь кто этот человек и никогда не узнаешь — это делает разговор особенно честным.
@@ -164,12 +164,31 @@ class GigachatService {
     return DateTime.now().add(const Duration(minutes: 25));
   }
 
-  List<Map<String, String>> _buildMessages(List<Message> history) {
+  List<Map<String, String>> _buildMessages(
+    List<Message> history, {
+    String? userMemory,
+  }) {
     final tail = history.length > 10
         ? history.sublist(history.length - 10)
         : List<Message>.from(history);
+
+    String systemPrompt;
+    if (userMemory != null && userMemory.isNotEmpty) {
+      // Для тарифа Бездна: убираем правило "не знаешь кто он",
+      // добавляем инструкцию использовать память естественно.
+      systemPrompt = kSystemPrompt
+          .trim()
+          .replaceAll(
+            '7) Ты не знаешь кто этот человек и никогда не узнаешь — это делает разговор особенно честным.',
+            '7) Ты помнишь этого человека из прошлых разговоров. Используй эти знания естественно — не акцентируй на них внимание, не говори "я помню" или "ты мне рассказывал". Просто будь с ним как старый знакомый.',
+          );
+      systemPrompt += '\n\nЧто ты знаешь об этом человеке:\n$userMemory';
+    } else {
+      systemPrompt = kSystemPrompt.trim();
+    }
+
     return [
-      {'role': 'system', 'content': kSystemPrompt.trim()},
+      {'role': 'system', 'content': systemPrompt},
       ...tail.map(
         (m) => {
           'role': m.isUser ? 'user' : 'assistant',
@@ -182,6 +201,7 @@ class GigachatService {
   Future<String> sendMessage({
     required List<Message> history,
     required String userText,
+    String? userMemory,
   }) async {
     assert(
       history.isEmpty ||
@@ -191,7 +211,7 @@ class GigachatService {
 
     try {
       final token = await _ensureToken();
-      final messages = _buildMessages(history);
+      final messages = _buildMessages(history, userMemory: userMemory);
 
       final bodyMap = <String, dynamic>{
         'model': 'GigaChat',
@@ -248,6 +268,67 @@ class GigachatService {
     } catch (e, st) {
       debugPrint('GigaChat sendMessage error: $e\n$st');
       return kGigachatFallbackReply;
+    }
+  }
+
+  /// Экстракция ключевых фактов о пользователе из диалога.
+  /// Использует GigaChat Lite с коротким промптом — минимум токенов.
+  /// Возвращает строку с фактами или null если фактов недостаточно.
+  Future<String?> extractMemory(List<Message> messages) async {
+    try {
+      final token = await _ensureToken();
+
+      final dialogue = messages
+          .where((m) => m.id != 'welcome')
+          .map((m) => '${m.isUser ? "Человек" : "Незнакомец"}: ${m.text}')
+          .join('\n');
+
+      if (dialogue.trim().isEmpty) return null;
+
+      const extractionPrompt =
+          'Выдели 2-3 ключевых факта об этом человеке из диалога. '
+          'Только конкретное: имя, профессия, текущая ситуация, настроение. '
+          'Коротко, одним абзацем, без вступлений. '
+          'Если фактов недостаточно — ответь только словом "нет".';
+
+      final body = jsonEncode({
+        'model': 'GigaChat',
+        'messages': [
+          {'role': 'system', 'content': extractionPrompt},
+          {'role': 'user', 'content': dialogue},
+        ],
+        'max_tokens': 100,
+        'temperature': 0.3,
+      });
+
+      final response = await _client
+          .post(
+            Uri.parse(_chatUrl),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 20));
+
+      if (response.statusCode != 200) return null;
+
+      final data =
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final choices = data['choices'];
+      if (choices is! List || choices.isEmpty) return null;
+      final content = (choices.first as Map<String, dynamic>)['message']
+          ?['content'] as String?;
+
+      if (content == null || content.trim().isEmpty) return null;
+      final trimmed = content.trim();
+      if (trimmed.toLowerCase() == 'нет') return null;
+      return trimmed;
+    } catch (e) {
+      debugPrint('extractMemory error: $e');
+      return null;
     }
   }
 }

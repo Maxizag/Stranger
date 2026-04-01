@@ -213,6 +213,45 @@ class VaultService {
     );
   }
 
+  Future<void> updateSession(
+    String sessionId,
+    List<Message> messages,
+    String pin,
+  ) async {
+    if (!await pinMatches(pin)) {
+      throw StateError('Неверный PIN');
+    }
+    final title = _titleFromMessages(messages);
+    final savedAt = DateTime.now();
+    final payload = jsonEncode(messages.map((m) => m.toJson()).toList());
+    final plain = Uint8List.fromList(utf8.encode(payload));
+
+    final key = _deriveAesKey(pin);
+    final iv = Uint8List(_gcmIvLength);
+    _randomBytes(iv);
+    final sealed = _aesGcmEncrypt(key, iv, plain);
+
+    final packet = Uint8List(iv.length + sealed.length);
+    packet.setAll(0, iv);
+    packet.setAll(iv.length, sealed);
+
+    await _storage.write(
+      key: '$_sessionKeyPrefix$sessionId',
+      value: base64Encode(packet),
+    );
+
+    final sessions = await loadSessionsMetadata();
+    final next = sessions.map((s) {
+      if (s.id != sessionId) return s.toIndexJson();
+      return VaultSession(id: sessionId, title: title, savedAt: savedAt)
+          .toIndexJson();
+    }).toList();
+    await _storage.write(
+      key: _sessionsIndexKey,
+      value: jsonEncode(next),
+    );
+  }
+
   Future<List<Message>> loadSessionMessages(String sessionId, String pin) async {
     if (!await pinMatches(pin)) {
       throw StateError('Неверный PIN');

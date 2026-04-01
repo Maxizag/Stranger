@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neznakomets/features/home/home_provider.dart';
+import 'package:neznakomets/features/subscription/subscription_provider.dart';
 import 'package:neznakomets/models/message.dart';
 import 'package:neznakomets/services/counter_service.dart';
 import 'package:neznakomets/services/gigachat_service.dart';
+import 'package:neznakomets/services/limit_service.dart';
+import 'package:neznakomets/services/memory_service.dart';
 
 const List<String> kCrisisTriggers = [
   'не хочу жить',
@@ -17,6 +20,9 @@ const List<String> kCrisisTriggers = [
 /// Перед `go('/chat')` из сейфа: записать копию, `ref.invalidate(chatProvider)`, затем переход.
 /// Фабрика [chatProvider] читает историю, синхронно очищает этот провайдер и передаёт копию в [ChatNotifier].
 final historyProvider = StateProvider<List<Message>>((ref) => []);
+
+/// ID сессии сейфа из которой был открыт текущий чат. null — новый чат.
+final resumedVaultSessionIdProvider = StateProvider<String?>((ref) => null);
 
 class ChatState {
   const ChatState({
@@ -90,20 +96,50 @@ class ChatState {
 class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier(
     this._gigachat,
-    this._counter, {
+    this._counter,
+    this._memory,
+    this._limit, {
     ChatState? initialState,
+    this.isUltraPlan = false,
+    this.plan = 'free',
   }) : super(initialState ?? ChatState.initial()) {
-    Future<void>.microtask(_bumpSessionCounter);
+    Future<void>.microtask(_init);
   }
 
   final GigachatService _gigachat;
   final CounterService _counter;
+  final MemoryService _memory;
+  final LimitService _limit;
+  final bool isUltraPlan;
+  final String plan;
+  String? _userMemory;
+
+  Future<void> _init() async {
+    await _bumpSessionCounter();
+    if (isUltraPlan) {
+      _userMemory = await _memory.getMemory();
+      debugPrint('ChatNotifier: память загружена: $_userMemory');
+    }
+  }
 
   Future<void> _bumpSessionCounter() async {
     try {
       await _counter.incrementCount();
     } catch (e, st) {
       debugPrint('CounterService.incrementCount: $e\n$st');
+    }
+  }
+
+  /// Вызывается при завершении сессии (пауза приложения или лимит 20 сообщений).
+  /// Запускает экстракцию фактов о пользователе и сохраняет в память.
+  Future<void> maybeExtractMemory() async {
+    if (!isUltraPlan) return;
+    final meaningful = state.messages.where((m) => m.id != 'welcome').length;
+    if (meaningful < 5) return;
+    final facts = await _gigachat.extractMemory(state.messages);
+    if (facts != null) {
+      await _memory.saveMemory(facts);
+      debugPrint('ChatNotifier: память обновлена: $facts');
     }
   }
 
@@ -119,6 +155,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final text = raw.trim();
     if (text.isEmpty || state.isLoading || state.isAtLimit) return;
     if (state.messages.length >= 20) return;
+
+    // Проверяем лимит сообщений перед отправкой
+    final canSend = await _limit.canStartSession(plan: plan);
+    if (!canSend) {
+      final limitMsg = Message(
+        id: 'limit_${DateTime.now().microsecondsSinceEpoch}',
+        text: 'лимит сообщений на сегодня исчерпан. возвращайся завтра.',
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+      state = state.copyWith(messages: [...state.messages, limitMsg]);
+      return;
+    }
+    await _limit.recordSession(plan: plan);
 
     final userMsg = Message(
       id: 'u_${DateTime.now().microsecondsSinceEpoch}',
@@ -151,6 +201,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final reply = await _gigachat.sendMessage(
         history: messages,
         userText: text,
+        userMemory: isUltraPlan ? _userMemory : null,
       );
       final aiMsg = Message(
         id: 'a_${DateTime.now().microsecondsSinceEpoch}',
@@ -181,22 +232,33 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
 final chatProvider =
     StateNotifierProvider.autoDispose<ChatNotifier, ChatState>((ref) {
+  final sub = ref.read(subscriptionProvider);
+  final currentPlan = sub.isSubscribed ? sub.selectedPlan : 'free';
+  final isUltra = currentPlan == 'ultra';
+  final memory = ref.read(memoryServiceProvider);
+  final limit = ref.read(limitServiceProvider);
   final history = ref.read(historyProvider);
   if (history.isNotEmpty) {
     final copy = List<Message>.from(history);
-    // Riverpod запрещает синхронно менять другие провайдеры во время
-    // инициализации. Очистим историю асинхронно (после текущего build).
     Future.microtask(() {
       ref.read(historyProvider.notifier).state = [];
     });
     return ChatNotifier(
       GigachatService(),
       ref.read(counterServiceProvider),
+      memory,
+      limit,
       initialState: ChatState.fromResumeHistory(copy),
+      isUltraPlan: isUltra,
+      plan: currentPlan,
     );
   }
   return ChatNotifier(
     GigachatService(),
     ref.read(counterServiceProvider),
+    memory,
+    limit,
+    isUltraPlan: isUltra,
+    plan: currentPlan,
   );
 });

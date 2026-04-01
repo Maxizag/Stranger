@@ -5,7 +5,7 @@ class SubscriptionState {
   const SubscriptionState({
     // TODO: убрать перед релизом — вернуть isSubscribed: false
     this.isSubscribed = true,
-    this.selectedPlan = 'ultra',
+    this.selectedPlan = 'voice',
   });
 
   final bool isSubscribed;

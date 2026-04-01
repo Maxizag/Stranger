@@ -5,6 +5,7 @@ import 'package:neznakomets/core/theme/app_colors.dart';
 import 'package:neznakomets/core/theme/app_text_styles.dart';
 import 'package:neznakomets/core/widgets/plum_ui.dart';
 import 'package:neznakomets/features/home/home_provider.dart';
+import 'package:neznakomets/features/subscription/subscription_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -35,28 +36,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (state == AppLifecycleState.resumed) _refreshRemaining();
   }
 
+  String get _currentPlan =>
+      ref.read(subscriptionProvider).selectedPlan;
+
   Future<void> _refreshRemaining() async {
-    final n = await ref.read(limitServiceProvider).remainingToday();
+    final n = await ref.read(limitServiceProvider).remainingToday(plan: _currentPlan);
     if (mounted) setState(() => _remainingSessions = n);
   }
 
   Future<void> _onStartSpeaking() async {
+    final plan = _currentPlan;
     final limit = ref.read(limitServiceProvider);
-    final ok = await limit.canStartSession();
+    final ok = await limit.canStartSession(plan: plan);
     if (!mounted) return;
     if (!ok) {
-      final remaining = await limit.remainingToday();
+      final remaining = await limit.remainingToday(plan: plan);
       if (!mounted) return;
       _showLimitSheet(remaining);
       return;
     }
-    await limit.recordSession();
     if (!mounted) return;
     await context.push('/chat');
     if (mounted) _refreshRemaining();
   }
 
+  String _limitDescription(String plan) {
+    switch (plan) {
+      case 'echo':
+        return 'тариф Эхо — 10 сообщений в день';
+      case 'voice':
+        return 'тариф Голос — 40 сообщений в день';
+      case 'ultra':
+        return 'тариф Бездна — 80 сообщений в день';
+      default:
+        return 'бесплатно доступно 3 сообщения в день';
+    }
+  }
+
   void _showLimitSheet(int remainingToday) {
+    final plan = _currentPlan;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.homeLimitSheetBg,
@@ -81,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'бесплатно доступно 3 сессии в день',
+                  _limitDescription(plan),
                   textAlign: TextAlign.center,
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 14,
@@ -90,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'осталось сессий сегодня: $remainingToday',
+                  'осталось сообщений сегодня: $remainingToday',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.onboardingBody.copyWith(
                     fontSize: 16,
@@ -483,8 +501,8 @@ class _FooterBlock extends StatelessWidget {
         children: [
           Text(
             remainingLabel == null
-                ? 'Осталось сессий сегодня: …'
-                : 'Осталось сессий сегодня: $remainingLabel',
+                ? 'Осталось сообщений сегодня: …'
+                : 'Осталось сообщений сегодня: $remainingLabel',
             style: AppTextStyles.onboardingBody.copyWith(
               fontSize: 14,
               color: AppColors.textPrimary.withValues(alpha: 0.92),

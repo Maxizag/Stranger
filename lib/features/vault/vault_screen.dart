@@ -252,8 +252,7 @@ class VaultScreen extends ConsumerWidget {
                                                 ],
                                               ),
                                             );
-                                            if (ok == true &&
-                                                context.mounted) {
+                                            if (ok == true) {
                                               await ref
                                                   .read(vaultProvider
                                                       .notifier)
